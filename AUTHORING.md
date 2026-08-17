@@ -130,8 +130,8 @@ register is disposed automatically when the plugin unloads.
 | `register(disposable)` | Track any `{ dispose() }` for automatic cleanup on unload. |
 
 Each `addX` returns a disposable, so you can remove a contribution before unload if you want. `icon`
-values are [lucide](https://lucide.dev) names (`"cloud"`, `"git-branch"`, `"sparkles"`); an unknown
-name falls back to a puzzle glyph.
+values are [lucide](https://lucide.dev) names (`"cloud"`, `"git-branch"`, `"sparkles"`), drawn from a
+fixed allowlist. An unknown name is a validation error that fails the publish, not a fallback glyph.
 
 Persist your own JSON with `this.loadData()` / `this.saveData(obj)`; it is stored in your plugin's
 private data directory and needs no permission.
@@ -150,8 +150,8 @@ Reach the kernel through `this.<capability>`. Every call is brokered and rejects
 not granted. Request each in the `jensen.permissions` block (below).
 
 ```ts
-await this.graph.impact({ path: "src/auth.rs" });      // needs permissions.graph
-await this.graph.dependencies({ path: "src/auth.rs", incoming: true });
+await this.graph.impact({ target: "src/auth.rs" });    // needs permissions.graph
+await this.graph.dependencies({ target: "src/auth.rs", incoming: true });
 await this.graph.query({ /* ... */ });
 await this.graph.explainService({ /* ... */ });
 await this.knowledge.search({ query: "how login works" }); // needs permissions.knowledge
@@ -169,6 +169,53 @@ address so a redirect cannot escape it, and private and loopback addresses are r
 
 ## Adding a UI
 
+Describe the surface and let Jensen draw it. A page or pane returns `ui` nodes; the host renders them
+with its own components, so your surface follows the user's theme, needs no HTML or CSS, and has no
+message plumbing to get wrong.
+
+```ts
+import { Plugin, ui } from "@jensen/plugin";
+
+export default class extends Plugin {
+  private rows: { service: string; commits: number }[] = [];
+
+  async onload() {
+    this.addPage({
+      id: "hotspots",
+      label: "Hotspots",
+      icon: "workflow",
+      render: () => [
+        ui.row([ui.heading("Hotspots"), ui.button({ label: "Rescan", onClick: () => this.scan() })], {
+          align: "between",
+        }),
+        ui.table({
+          columns: [
+            { key: "service", label: "Service", align: "start" },
+            { key: "commits", label: "Commits" },
+          ],
+          rows: this.rows,
+          empty: "Nothing ranked yet.",
+        }),
+      ],
+    });
+  }
+
+  async scan() {
+    this.rows = await gather();
+    this.refresh();          // redraw every surface this plugin owns
+  }
+}
+```
+
+`addPane` is the same call for a right-drawer tab. A click runs your closure in the plugin sandbox and
+the surface redraws, so the whole model is: change state, call `refresh()`.
+
+Available nodes: `heading, text, code, badge, divider, stack, row, section, table, list, keyValue,
+stat, progress, button, empty, spinner, message`. Nodes a host is too old to know are skipped rather
+than failing the surface.
+
+### The escape hatch: your own HTML
+
 For rich views, ship an `ui/` folder. It runs in a second null-origin iframe with no kernel access; it
 talks only to your logic half through a typed bridge. Use `@jensen/plugin-ui`:
 
@@ -185,6 +232,12 @@ document.getElementById("run").addEventListener("click", async () => {
 In your logic half, handle those calls (return a value to resolve the promise) and push events with the
 UI event channel. The UI iframe has no network and cannot reach the app; the only path in or out is
 this bridge.
+
+Call `await jensen.ready()` first. It returns `{ pluginId, surface, theme }` and applies the app's
+design tokens to your document, so your CSS can use the same `var(--fg)`, `var(--surface)` and
+`var(--sp-3)` the app does and will follow a theme change. Skipping it leaves your surface with
+whatever palette you hardcoded, which will drift from the user's theme. `jensen.surface` tells you
+which page or pane this document was mounted as, so one bundle can serve several.
 
 ## package.json and the jensen block
 

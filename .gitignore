@@ -2,4 +2,7 @@
 # index.json pins their checksums.
 **/target/
 **/release/
+**/node_modules/
+plugins/*/main.js
+plugins/*/plugin.wasm
 AGENTS.md
