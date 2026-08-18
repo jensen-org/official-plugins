@@ -331,18 +331,18 @@ per-command work bounded and handle a denied or rate-limited call gracefully.
 
 TypeScript is the default. For CPU-heavy or existing-Rust logic you can instead ship a WebAssembly
 module built against the `jensen-plugin` PDK; it runs in the same kernel with the same permissions and
-governor. The example plugins in `plugins/` (`hello`, `impact`, `plan-lint`, `theme-light`) are this
-path.
+governor.
 
 Nothing about publishing changes. `package.json` stays the only file you author, and `jensen publish`
 picks up a `plugin.wasm` at the project root, or the newest module under
 `target/wasm32-unknown-unknown/release/`, the same way it picks up `main.js`. A `ui/` folder is zipped
-and pinned for you. Themes need no code at all: ship a token map and declare a `contributes.themes`
-entry naming its `tokensFile`.
+and pinned for you. Themes need no code at all: ship a theme document conforming to
+`schema/theme.schema.json` and declare a `contributes.themes` entry whose `file` names it. One plugin
+may contribute several, as `common-themes` does with thirteen.
 
 A plugin with code activates on startup by default. Set `jensen.activationEvents` yourself to load
-lazily instead (`["onCommand:impact.check", "onPanel:impact.panel"]`), or to `[]` for something like a
-markdown renderer that the app invokes on demand.
+lazily instead (`["onCommand:hotspots.scan", "onPanel:hotspots.panel"]`), or to `[]` for something
+like a theme, which contributes no code to run.
 
 ## Security checklist
 
