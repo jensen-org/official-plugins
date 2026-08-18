@@ -1,48 +1,26 @@
 {
   "plugins": [
     {
-      "id": "dev.jensen.theme-light",
-      "name": "Paper Light",
+      "id": "dev.jensen.hotspots",
+      "name": "Hotspots",
       "author": "Jensen",
-      "description": "A clean light theme for working in bright rooms.",
-      "category": "theme",
-      "version": "0.1.0",
-      "min_app_version": "0.0.0",
-      "repo": "jensen-org/plugin-theme-light",
-      "sha256": "b2c26457c4958f22ff341744d3f8b85f219ef3714539ad07baf0e4e294f00bcc"
-    },
-    {
-      "id": "dev.jensen.hello",
-      "name": "Hello",
-      "author": "Jensen",
-      "description": "A minimal sandboxed plugin: one command and one panel.",
-      "category": "example",
-      "version": "0.1.0",
-      "min_app_version": "0.0.0",
-      "repo": "jensen-org/plugin-hello",
-      "sha256": "3d3df3d4491d14daa31eeed980cd5c2e91e6324aa8a275474c3dee39d615a2b1"
-    },
-    {
-      "id": "dev.jensen.impact",
-      "name": "Impact",
-      "author": "Jensen",
-      "description": "Show what a file change would affect, read from the code graph.",
+      "description": "Rank services by change frequency crossed with how much depends on them.",
       "category": "graph",
       "version": "0.1.0",
       "min_app_version": "0.0.0",
-      "repo": "jensen-org/plugin-impact",
-      "sha256": "5216bb5ffcc2a9d10f36a7c3912511d044d41853bdd53c08ac752317ebad960b"
+      "repo": "jensen-org/plugin-hotspots",
+      "sha256": "8f72ddacbc9e5397e6d5270ab768641cc438065534f10eaf6bd6250330a49468"
     },
     {
-      "id": "dev.jensen.plan-lint",
-      "name": "Plan Lint (CriticMarkup)",
+      "id": "dev.jensen.common-themes",
+      "name": "Common Themes",
       "author": "Jensen",
-      "description": "Render CriticMarkup review marks in fenced blocks.",
-      "category": "lint",
+      "description": "Thirteen ported palettes the app no longer ships built in: Dracula Alucard, Gruvbox, Kanagawa, One, Rose Pine Moon, Solarized and Tokyo Night.",
+      "category": "theme",
       "version": "0.1.0",
       "min_app_version": "0.0.0",
-      "repo": "jensen-org/plugin-plan-lint",
-      "sha256": "af86fbbaa855f9ff1ef203ba5806adb3227b53ba64a91a814f8305e7ab376e0a"
+      "repo": "jensen-org/plugin-common-themes",
+      "sha256": "533aeace4ab6b115fabb3eb2fa081f1885b4472428c926427210b9e3efb6c48d"
     }
   ]
 }

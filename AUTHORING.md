@@ -233,11 +233,16 @@ In your logic half, handle those calls (return a value to resolve the promise) a
 UI event channel. The UI iframe has no network and cannot reach the app; the only path in or out is
 this bridge.
 
-Call `await jensen.ready()` first. It returns `{ pluginId, surface, theme }` and applies the app's
-design tokens to your document, so your CSS can use the same `var(--fg)`, `var(--surface)` and
-`var(--sp-3)` the app does and will follow a theme change. Skipping it leaves your surface with
-whatever palette you hardcoded, which will drift from the user's theme. `jensen.surface` tells you
-which page or pane this document was mounted as, so one bundle can serve several.
+Call `await jensen.ready()` first. It returns `{ pluginId, theme }` and applies the app's design
+tokens to your document, so your CSS can use the same `var(--fg)`, `var(--surface)` and `var(--sp-3)`
+the app does, and it keeps applying them when the user changes theme. Skipping it leaves your surface
+with whatever palette you hardcoded, which will drift from the user's theme: your iframe is sandboxed
+to a null origin, so it cannot read the app's custom properties on its own.
+
+```js
+const { theme } = await jensen.ready();   // tokens are on :root from here on
+document.body.style.background = "var(--bg-0)";
+```
 
 ## package.json and the jensen block
 

@@ -1,0 +1,82 @@
+{
+  "name": "Common Themes",
+  "version": "0.1.0",
+  "description": "Thirteen ported palettes the app no longer ships built in: Dracula Alucard, Gruvbox, Kanagawa, One, Rose Pine Moon, Solarized and Tokyo Night.",
+  "author": "Jensen",
+  "private": true,
+  "jensen": {
+    "id": "dev.jensen.common-themes",
+    "category": "theme",
+    "minAppVersion": "0.0.0",
+    "repo": "jensen-org/plugin-common-themes",
+    "contributes": {
+      "themes": [
+        {
+          "id": "dracula-alucard",
+          "name": "Dracula Alucard",
+          "file": "themes/dracula-alucard.json"
+        },
+        {
+          "id": "gruvbox-dark",
+          "name": "Gruvbox Dark",
+          "file": "themes/gruvbox-dark.json"
+        },
+        {
+          "id": "gruvbox-light",
+          "name": "Gruvbox Light",
+          "file": "themes/gruvbox-light.json"
+        },
+        {
+          "id": "kanagawa-dragon",
+          "name": "Kanagawa Dragon",
+          "file": "themes/kanagawa-dragon.json"
+        },
+        {
+          "id": "kanagawa-lotus",
+          "name": "Kanagawa Lotus",
+          "file": "themes/kanagawa-lotus.json"
+        },
+        {
+          "id": "kanagawa-wave",
+          "name": "Kanagawa Wave",
+          "file": "themes/kanagawa-wave.json"
+        },
+        {
+          "id": "one-dark",
+          "name": "One Dark",
+          "file": "themes/one-dark.json"
+        },
+        {
+          "id": "one-light",
+          "name": "One Light",
+          "file": "themes/one-light.json"
+        },
+        {
+          "id": "rose-pine-moon",
+          "name": "Rosé Pine Moon",
+          "file": "themes/rose-pine-moon.json"
+        },
+        {
+          "id": "solarized-dark",
+          "name": "Solarized Dark",
+          "file": "themes/solarized-dark.json"
+        },
+        {
+          "id": "solarized-light",
+          "name": "Solarized Light",
+          "file": "themes/solarized-light.json"
+        },
+        {
+          "id": "tokyo-night-light",
+          "name": "Tokyo Night Light",
+          "file": "themes/tokyo-night-light.json"
+        },
+        {
+          "id": "tokyo-night-storm",
+          "name": "Tokyo Night Storm",
+          "file": "themes/tokyo-night-storm.json"
+        }
+      ]
+    }
+  }
+}
