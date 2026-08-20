@@ -1,33 +1,58 @@
 # Contributing a plugin
 
-This registry lists plugins Jensen can install. To add yours, publish a release in your own repo and
-open a pull request adding one entry here. Read `AUTHORING.md` for the full guide; this is the
-checklist.
+This repository holds the plugins Jensen maintains. If you are publishing your own plugin from your
+own repository, you do not need to change anything here: build it, release it, and open a PR on
+[jensen-org/plugin-store](https://github.com/jensen-org/plugin-store) with your entry.
 
-## Checklist
+Read `AUTHORING.md` first. It covers the security model, the `Plugin` class, capabilities, and the
+declarative UI.
 
-1. **Build and publish.** From your built plugin directory (the one with `main.js`):
+## Adding a plugin to this monorepo
 
-   ```bash
-   npm run build
-   jensen publish
+1. **Create `plugins/<name>/`** with a `package.json` carrying identity in its `jensen` block:
+
+   ```json
+   "jensen": {
+     "id": "dev.jensen.<name>",
+     "category": "graph",
+     "minAppVersion": "0.0.0",
+     "repo": "jensen-org/official-plugins",
+     "tag": "<name>-v0.1.0",
+     "permissions": { "graph": true }
+   }
    ```
 
-   `jensen publish` reads `package.json`, generates and validates `manifest.json`, pins every artifact
-   it ships, assembles a `release/` folder, and prints the registry entry to add here. (Or use
-   **Plugins → Publish** in the app.)
+   `repo` and `tag` are both required here: releases come from this repository, so the tag has to
+   name the plugin. CI checks that `tag` equals `<name>-v<version>`.
 
-2. **Cut a GitHub release** in your plugin's repo whose tag equals the `version`, uploading every file
-   in `release/`.
+2. **Write `README.md`.** Required, and enforced by both `jensen publish` and CI. It ships as a
+   release asset and is what a user reads in the app before installing.
 
-3. **Add one entry** to the `plugins` array in `index.json` (see `README.md` for the shape). `id` must
-   match your manifest, `version` must equal the release tag, `repo` is the GitHub `owner/name` hosting
-   the release, and `sha256` is the value `jensen publish` printed.
+3. **Ask for the least you can.** Every capability in `permissions` becomes a line on the consent
+   screen. `fs` takes relative subpaths and `network` takes exact hosts; neither accepts a wildcard.
 
-4. **Validate `index.json`** against `schema.json`, then open the pull request.
+4. **Build and release:**
 
-## First-party plugins
+   ```sh
+   scripts/release.sh plugins/<name>
+   ```
 
-The plugins under `plugins/` are the Rust-to-WebAssembly examples, maintained here. Build one with its
-`build.sh`, then publish it exactly like any other: `jensen publish plugins/<name>`. It picks up the
-compiled module from `target/wasm32-unknown-unknown/release/` and zips the `ui/` folder itself.
+5. **Submit the entry** it prints to the store repository.
+
+## Changing an existing plugin
+
+Bump `version` in `package.json` **and** `jensen.tag` to match, since CI pins them together. Release
+as above, then open a store PR updating that plugin's entry with the new version, tag and `sha256`.
+
+An unchanged `sha256` with a bumped version means you shipped the old manifest; the store's CI
+verifies the checksum against the live release and will reject it.
+
+## What gets checked
+
+CI on this repository verifies, for every plugin, that it has a README, that `jensen.repo` points
+here, that `jensen.tag` follows the convention, and that it declares an id. The store's CI does the
+other half: schema validation, that the release actually exists, and that its manifest checksum
+matches the entry.
+
+Building and testing plugins in CI is wired up but disabled, because `@jensen/plugin` is still a
+`file:` path dependency on a local app checkout. It turns on when the SDK is published to npm.

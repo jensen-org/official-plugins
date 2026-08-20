@@ -1,81 +1,59 @@
-# Jensen plugin registry
+# Jensen official plugins
 
-The catalog of plugins Jensen can install from its **Plugins** page. Jensen fetches `index.json` from
-this repository's raw URL, the same way it fetches the language-server registry, so the catalog lives
-here and never ships inside the app.
+The source monorepo for the plugins Jensen ships and maintains. Every plugin here is built, released,
+and documented in one place.
 
-Hosting is a public GitHub repository served over `raw.githubusercontent.com`. There is no server and
-no cost.
+This is **not** the catalog. The catalog Jensen fetches lives in
+[jensen-org/plugin-store](https://github.com/jensen-org/plugin-store), which carries only the index
+entries. Source here, catalog there, and the two are joined by a release tag and a checksum.
 
 ## Layout
 
 ```
-index.json        the catalog Jensen fetches
-schema.json       the JSON Schema for index.json
-AUTHORING.md      the full plugin authoring guide (TypeScript)
-CONTRIBUTING.md   how to publish a plugin here
-plugins/          source for the first-party example plugins (Rust/WASM advanced path)
-  hello/          command + panel + UI starter
-  impact/         reads the code graph (a graph tool)
-  plan-lint/      a markdown fenced-block renderer, no UI
-  theme-light/    a light theme, no code at all
+plugins/
+  hotspots/        ranks services by churn crossed with coupling (TypeScript, uses git + graph)
+  common-themes/   thirteen ported palettes (no code at all)
+scripts/release.sh builds, publishes, and cuts the GitHub release for one plugin
+AUTHORING.md       the full plugin authoring guide
+CONTRIBUTING.md    how to add or change a plugin here
 ```
 
-Plugins are written in **TypeScript** and published with `jensen publish`, which generates the manifest
-and assembles the release for you (see `AUTHORING.md`). The `plugins/` examples are the advanced
-Rust-to-WebAssembly path, still supported and published with the same one command.
+Plugins are written in **TypeScript** against `@jensen/plugin` and published with `jensen publish`,
+which generates the manifest and assembles the release for you. A theme plugin ships no code at all.
+Rust-to-WebAssembly is a supported advanced path, documented in `AUTHORING.md`.
 
-## How the app reads this
+## Releases
 
-Jensen fetches:
+Every plugin in this monorepo releases from **this repository**, tagged `<plugin>-v<version>`:
 
 ```
-https://raw.githubusercontent.com/jensen-org/jensen-registry/develop/index.json
+https://github.com/jensen-org/official-plugins/releases/tag/hotspots-v0.1.0
 ```
 
-If the file is missing or unreachable, the Plugins page shows a calm empty state, never an error. The
-catalog only lists what is available; installed plugins live on the user's machine. A user can turn the
-public registry off, or point Jensen at a private registry URL, from Settings → Plugins.
+The tag has to carry the plugin name because two plugins cannot both own the tag `0.1.0`. A plugin in
+its own repository can keep a plain `0.1.0` tag and omit `jensen.tag` entirely.
 
-## What an entry is
+Cut a release with:
 
-The registry tells Jensen where to find a plugin (`repo` + `version`) and pins it with the checksum of
-its release manifest (`sha256`). It carries no capabilities and no code. Integrity is verified at
-install: Jensen downloads the release `manifest.json`, checks it against `sha256`, validates it, and
-unpacks the plugin (its `main.js`, or a WASM module and UI for the advanced path), staged disabled
-until the user approves its permissions. What the plugin may actually do is enforced by the sandbox and
-the consent screen, not by the registry.
-
-## Publishing a plugin
-
-See `CONTRIBUTING.md` for the checklist and `AUTHORING.md` for the full guide. In short: run
-`jensen publish` in your built plugin directory (it generates `manifest.json`, assembles a `release/`
-folder, and prints the entry), cut a GitHub release in your own repo whose tag equals the `version`
-uploading every file in `release/`, then open a pull request adding one entry to the `plugins` array in
-`index.json`.
-
-An entry:
-
-```json
-{
-  "id": "acme.markdown-lint",
-  "name": "Markdown Lint",
-  "author": "Acme",
-  "description": "Flags style issues in Markdown as you type.",
-  "category": "lint",
-  "version": "1.2.0",
-  "min_app_version": "0.1.0",
-  "repo": "acme/md-lint",
-  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-}
+```sh
+scripts/release.sh plugins/hotspots
 ```
 
-- `id` is reverse-dns `publisher.name`, lowercase, stable across versions. It is the install directory
-  name and must match the id in the release manifest.
-- `repo` is the GitHub `owner/name` that hosts the release. Jensen builds the asset URLs as
-  `https://github.com/<repo>/releases/download/<version>/<asset>`.
-- `version` must equal the release tag.
-- `sha256` is the checksum `jensen publish` printed for `manifest.json`.
+It builds, runs `jensen publish`, uploads every asset in `release/`, and prints the entry to submit to
+the store.
 
-`schema.json` is the JSON Schema for `index.json`; validate your change against it before opening the
-PR. `jensen publish` already validates the manifest it generates.
+## Every plugin needs a README
+
+`jensen publish` refuses a plugin directory without a `README.md`, and CI here rejects one too. The
+README is not decoration: it is shipped as a release asset, pinned by the same checksum chain as the
+code, and rendered in the app when a user opens the plugin's detail view **before deciding to
+install**. It is the only thing standing between a permission prompt and a blind yes.
+
+Say what the plugin does, what capabilities it asks for and why, and what it does when it has nothing
+to show.
+
+## Adding a plugin
+
+See `CONTRIBUTING.md`. In short: add a directory under `plugins/`, write the `README.md`, point
+`jensen.repo` at this repo with a `<plugin>-v<version>` tag, run `scripts/release.sh`, then open a PR
+on the store adding your entry.

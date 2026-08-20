@@ -17,7 +17,8 @@
     "id": "dev.jensen.hotspots",
     "category": "graph",
     "minAppVersion": "0.0.0",
-    "repo": "jensen-org/plugin-hotspots",
+    "repo": "jensen-org/official-plugins",
+    "tag": "hotspots-v0.1.0",
     "permissions": {
       "graph": true,
       "git": true

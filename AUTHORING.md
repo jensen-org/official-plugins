@@ -255,6 +255,7 @@ Everything the manifest needs is derived from `package.json`. Standard npm field
 | `category` | Free-form grouping shown on the card and used by the category filter. |
 | `minAppVersion` | Lowest Jensen version you support. Defaults to the app you publish from. |
 | `repo` | `owner/name` of the GitHub repo hosting your releases. |
+| `tag` | Release tag, when it is not just `version`. A monorepo shipping several plugins needs one tag per plugin, by convention `<plugin>-v<version>`. Omit it and the tag is the version. |
 | `permissions` | `{ graph, knowledge, git, fs, network }`. See below. Deny by default. |
 | `contributes` | Optional. Declare views here to make them appear before your code runs (lazy load). Most plugins register imperatively in `onload` instead and leave this out. |
 
@@ -278,8 +279,8 @@ jensen publish            # or: jensen publish path/to/plugin
 ```
 
 It reads `package.json`, finds what your build produced, generates `manifest.json` (activating on
-startup so your `onload` runs), assembles a `release/` folder holding the manifest and every artifact it
-pins, computes the manifest's `sha256`, and prints the registry entry to add:
+startup so your `onload` runs), assembles a `release/` folder holding the manifest, your `README.md`,
+and every artifact it pins, computes the manifest's `sha256`, and prints the store entry to add:
 
 ```json
 {
@@ -295,21 +296,30 @@ pins, computes the manifest's `sha256`, and prints the registry entry to add:
 }
 ```
 
+**A `README.md` is required.** `jensen publish` fails without one. It ships as a release asset pinned
+by the same checksum as your code, and Jensen renders it in the plugin's detail view *before* the user
+installs, so it is what they read while deciding whether to grant your permissions. Cover what the
+plugin does, which capabilities it asks for and why, and how it behaves when a permission is withheld.
+
 You can also run it from the app: **Plugins → Publish**, pick your folder, and copy the entry.
 
 Then:
 
 1. Create a GitHub release on your `repo` whose tag equals `version`, uploading every file in
-   `release/`.
-2. To reach every user, open a pull request adding the entry above to this registry's `index.json`
-   (see `CONTRIBUTING.md`). To test or share privately, users can install the release URL directly;
-   Jensen marks such plugins **unverified** and asks for the full permission consent.
+   `release/`. If you set `jensen.tag`, use that instead.
+2. To reach every user, open a pull request on
+   [jensen-org/plugin-store](https://github.com/jensen-org/plugin-store) adding the entry above as
+   `entries/<id>.json`. Its CI validates the entry, fetches your release, and checks the checksum
+   before the catalog is rebuilt, so a broken entry fails on your PR rather than in someone's app.
+   To test or share privately, users can install the release URL directly; Jensen marks such plugins
+   **unverified** and asks for the full permission consent.
 
 ### How installation works
 
-The registry's `index.json` lists, per plugin, `{ id, name, author, description, category, version,
-min_app_version, repo, sha256 }`. It locates a plugin (`repo` + `version`) and pins it (`sha256` is the
-checksum of the release `manifest.json`); it carries no capabilities and no code. To install, Jensen
+The store's `index.json` lists, per plugin, `{ id, name, author, description, category, version,
+min_app_version, repo, sha256 }` plus an optional `tag`. It locates a plugin (`repo` + tag) and pins it
+(`sha256` is the checksum of the release `manifest.json`); it carries no capabilities and no code. To
+install, Jensen
 downloads the release `manifest.json`, checks it against `sha256`, validates it, confirms its id, and
 stages the plugin disabled until the user approves its permissions. There are no keys to manage: what a
 plugin may do is enforced by the sandbox and the consent screen, not the registry.
