@@ -1,0 +1,31 @@
+{
+  "name": "Hotspots",
+  "version": "0.1.0",
+  "description": "Rank services by change frequency crossed with how much depends on them.",
+  "author": "Jensen",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "./build.sh",
+    "test": "node --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "@jensen/plugin": "file:../../../jensen/packages/plugin-sdk",
+    "esbuild": "^0.25.0"
+  },
+  "jensen": {
+    "id": "dev.jensen.hotspots",
+    "category": "graph",
+    "minAppVersion": "0.0.0",
+    "repo": "jensen-org/official-plugins",
+    "tag": "hotspots-v0.1.0",
+    "permissions": {
+      "graph": true,
+      "git": true
+    },
+    "activationEvents": [
+      "onStartup"
+    ],
+    "contributes": {}
+  }
+}

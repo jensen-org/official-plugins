@@ -1,0 +1,59 @@
+name: plugins
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every plugin is documented and addressable
+        run: |
+          fail=0
+          for pkg in plugins/*/package.json; do
+            dir="$(dirname "$pkg")"
+            name="$(basename "$dir")"
+            if [ ! -f "$dir/README.md" ]; then
+              echo "::error file=$pkg::$name has no README.md; the plugin detail view has nothing to show"
+              fail=1
+            fi
+            repo="$(jq -r '.jensen.repo // ""' "$pkg")"
+            if [ "$repo" != "jensen-org/official-plugins" ]; then
+              echo "::error file=$pkg::$name points at '$repo'; plugins in this monorepo release from jensen-org/official-plugins"
+              fail=1
+            fi
+            tag="$(jq -r '.jensen.tag // ""' "$pkg")"
+            version="$(jq -r '.version' "$pkg")"
+            if [ "$tag" != "$name-v$version" ]; then
+              echo "::error file=$pkg::$name declares tag '$tag'; the monorepo convention is '$name-v$version'"
+              fail=1
+            fi
+            if [ -z "$(jq -r '.jensen.id // ""' "$pkg")" ]; then
+              echo "::error file=$pkg::$name has no jensen.id"
+              fail=1
+            fi
+          done
+          exit $fail
+
+  build:
+    runs-on: ubuntu-latest
+    # The SDK is still a `file:` path dependency on the app checkout, so npm cannot resolve
+    # @jensen/plugin here. Drop this guard the moment @jensen/plugin is on npm.
+    if: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: |
+          for pkg in plugins/*/package.json; do
+            dir="$(dirname "$pkg")"
+            node -e "process.exit(require('./$pkg').scripts?.build ? 0 : 1)" || continue
+            (cd "$dir" && npm ci && npm run build && npm test)
+          done
