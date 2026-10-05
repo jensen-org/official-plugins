@@ -4,8 +4,8 @@ This repository holds the plugins Jensen maintains. If you are publishing your o
 own repository, you do not need to change anything here: build it, release it, and open a PR on
 [jensen-org/plugin-store](https://github.com/jensen-org/plugin-store) with your entry.
 
-Read `AUTHORING.md` first. It covers the security model, the `Plugin` class, capabilities, and the
-declarative UI.
+Read `AUTHORING.md` first. It points at the SDK docs, which cover the security model, the `Plugin`
+class, permissions and panes.
 
 ## Adding a plugin to this monorepo
 
@@ -15,7 +15,7 @@ declarative UI.
    "jensen": {
      "id": "dev.jensen.<name>",
      "category": "graph",
-     "minAppVersion": "0.0.0",
+     "minAppVersion": "0.3.0",
      "repo": "jensen-org/official-plugins",
      "tag": "<name>-v0.1.0",
      "permissions": { "graph": true }
@@ -54,5 +54,5 @@ here, that `jensen.tag` follows the convention, and that it declares an id. The 
 other half: schema validation, that the release actually exists, and that its manifest checksum
 matches the entry.
 
-Building and testing plugins in CI is wired up but disabled, because `@jensen/plugin` is still a
-`file:` path dependency on a local app checkout. It turns on when the SDK is published to npm.
+Building and testing plugins in CI is wired up but disabled until `jensen-plugin-sdk` is on npm. It
+turns on then.

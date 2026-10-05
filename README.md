@@ -10,17 +10,17 @@ entries. Source here, catalog there, and the two are joined by a release tag and
 ## Layout
 
 ```
-plugins/
-  hotspots/        ranks services by churn crossed with coupling (TypeScript, uses git + graph)
-  common-themes/   thirteen ported palettes (no code at all)
+plugins/           one folder per plugin (none yet)
 scripts/release.sh builds, publishes, and cuts the GitHub release for one plugin
-AUTHORING.md       the full plugin authoring guide
+AUTHORING.md       where the plugin authoring guide lives
 CONTRIBUTING.md    how to add or change a plugin here
 ```
 
-Plugins are written in **TypeScript** against `@jensen/plugin` and published with `jensen publish`,
-which generates the manifest and assembles the release for you. A theme plugin ships no code at all.
-Rust-to-WebAssembly is a supported advanced path, documented in `AUTHORING.md`.
+The first generation of plugins (Hotspots and Common Themes) was written for the retired plugin
+system and has been removed. Plugins here are rebuilt from scratch, only where they are useful, on the
+[`jensen-plugin-sdk`](https://github.com/jensen-org/plugin-sdk): a `Plugin` class, panes, commands,
+hotkeys and settings, with typed access to the project's files, the editor, the layout and the theme.
+`jensen publish` generates the manifest and assembles the release.
 
 ## Releases
 

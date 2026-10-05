@@ -15,6 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Every plugin is documented and addressable
         run: |
+          shopt -s nullglob
           fail=0
           for pkg in plugins/*/package.json; do
             dir="$(dirname "$pkg")"
@@ -43,8 +44,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    # The SDK is still a `file:` path dependency on the app checkout, so npm cannot resolve
-    # @jensen/plugin here. Drop this guard the moment @jensen/plugin is on npm.
+    # Drop this guard the moment jensen-plugin-sdk is on npm.
     if: false
     steps:
       - uses: actions/checkout@v4
