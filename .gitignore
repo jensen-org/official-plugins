@@ -5,4 +5,5 @@
 **/node_modules/
 plugins/*/main.js
 plugins/*/plugin.wasm
+plugins/*/backend.wasm
 AGENTS.md

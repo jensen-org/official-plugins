@@ -1,0 +1,221 @@
+{
+  "name": "images-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Resize, compress, round the corners of and convert images right on Jensen's image page, with a Rust backend that agents can call too",
+  "author": "Jensen",
+  "license": "MIT",
+  "scripts": {
+    "build": "jensen-plugin build",
+    "dev": "jensen-plugin dev",
+    "validate": "jensen-plugin validate",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test test && cargo test --manifest-path backend/Cargo.toml"
+  },
+  "dependencies": {
+    "@jensen-org/plugin-sdk": "^0.2.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.3"
+  },
+  "jensen": {
+    "id": "dev.jensen.images-tools",
+    "displayName": "Images Tools",
+    "category": "media",
+    "minAppVersion": "0.3.0",
+    "repo": "jensen-org/official-plugins",
+    "tag": "images-tools-v0.1.0",
+    "backend": "backend.wasm",
+    "backendBuild": "cargo build --release --target wasm32-unknown-unknown --manifest-path backend/Cargo.toml && cp backend/target/wasm32-unknown-unknown/release/images_tools.wasm backend.wasm",
+    "permissions": {
+      "backend": true,
+      "editor": "read",
+      "fs": [
+        "*.png",
+        "*.jpg",
+        "*.jpeg",
+        "*.gif",
+        "*.webp",
+        "*.bmp",
+        "*.ico",
+        "*.tif",
+        "*.tiff",
+        "*.svg"
+      ]
+    },
+    "tools": [
+      {
+        "name": "info",
+        "description": "Read an image's format, pixel size and file size without changing it. Works on png, jpeg, gif, webp, bmp, ico, tiff and svg.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Project relative path of the image"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "resize",
+        "description": "Resize an image in place. Give a width, a height, or both. With both and keepAspect (the default) the image fits inside that box. SVG is redrawn sharp at the new size as a PNG next to the original.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Project relative path of the image"
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "keepAspect": {
+              "type": "boolean",
+              "default": true
+            },
+            "filter": {
+              "enum": [
+                "nearest",
+                "bilinear",
+                "bicubic",
+                "gaussian",
+                "lanczos3"
+              ],
+              "default": "lanczos3"
+            },
+            "out": {
+              "type": "string",
+              "description": "Write the result here instead of next to the source"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "compress",
+        "description": "Make an image file smaller without changing its pixel size. JPEG uses quality, PNG is recompressed losslessly (and stored as a palette when it has 256 colors or fewer), SVG is minified. The file is left alone when it cannot get smaller.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Project relative path of the image"
+            },
+            "quality": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 80,
+              "description": "JPEG quality"
+            },
+            "out": {
+              "type": "string",
+              "description": "Write the result here instead of next to the source"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "round_corners",
+        "description": "Round an image's corners with smooth, transparent edges. radius is in pixels, or a percent of the shortest side when percent is true (50 makes a circle). A JPEG becomes a PNG because it cannot be transparent.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Project relative path of the image"
+            },
+            "radius": {
+              "type": "number",
+              "minimum": 0
+            },
+            "percent": {
+              "type": "boolean",
+              "default": false
+            },
+            "out": {
+              "type": "string",
+              "description": "Write the result here instead of next to the source"
+            }
+          },
+          "required": [
+            "path",
+            "radius"
+          ],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "convert",
+        "description": "Convert an image to another format and replace the original with the new file, which has the new extension. Targets: png, jpg, webp (lossless), gif, bmp, ico (256 px or smaller), tiff. SVG is drawn as a raster and the SVG is kept. Refuses to overwrite an existing file unless overwrite is true.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Project relative path of the image"
+            },
+            "to": {
+              "enum": [
+                "png",
+                "jpg",
+                "webp",
+                "gif",
+                "bmp",
+                "ico",
+                "tiff"
+              ]
+            },
+            "quality": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 80
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "For SVG sources: the raster width"
+            },
+            "keepOriginal": {
+              "type": "boolean",
+              "default": false
+            },
+            "overwrite": {
+              "type": "boolean",
+              "default": false
+            },
+            "out": {
+              "type": "string",
+              "description": "Write the result here instead of next to the source"
+            }
+          },
+          "required": [
+            "path",
+            "to"
+          ],
+          "additionalProperties": false
+        }
+      }
+    ]
+  }
+}

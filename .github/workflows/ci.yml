@@ -44,16 +44,22 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    # Drop this guard the moment jensen-plugin-sdk is on npm.
+    # Turn this on once @jensen-org/plugin-sdk 0.2.0 is on npm and the plugin-sdk repository has the v0.2.0 tag,
+    # which the images-tools backend depends on. Then delete the line below.
     if: false
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          node-version: 22
-      - run: |
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: plugins/images-tools/backend
+      - name: Build and test every plugin that builds
+        run: |
           for pkg in plugins/*/package.json; do
             dir="$(dirname "$pkg")"
-            node -e "process.exit(require('./$pkg').scripts?.build ? 0 : 1)" || continue
-            (cd "$dir" && npm ci && npm run build && npm test)
+            jq -e '.scripts.build' "$pkg" >/dev/null || continue
+            (cd "$dir" && bun install && bun run build && bun run test)
           done

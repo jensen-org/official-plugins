@@ -2,7 +2,7 @@
 
 This repository holds the plugins Jensen maintains. If you are publishing your own plugin from your
 own repository, you do not need to change anything here: build it, release it, and open a PR on
-[jensen-org/plugin-store](https://github.com/jensen-org/plugin-store) with your entry.
+[jensen-org/plugins-store](https://github.com/jensen-org/plugins-store) with your entry.
 
 Read `AUTHORING.md` first. It points at the SDK docs, which cover the security model, the `Plugin`
 class, permissions and panes.
@@ -29,7 +29,8 @@ class, permissions and panes.
    release asset and is what a user reads in the app before installing.
 
 3. **Ask for the least you can.** Every capability in `permissions` becomes a line on the consent
-   screen. `fs` takes relative subpaths and `network` takes exact hosts; neither accepts a wildcard.
+   screen. `fs` takes a folder (`"docs"`), a file type (`"*.png"`), or `"."` for every file, so name
+   the narrowest scope that works. `network` takes exact hosts and no wildcard.
 
 4. **Build and release:**
 
@@ -54,5 +55,5 @@ here, that `jensen.tag` follows the convention, and that it declares an id. The 
 other half: schema validation, that the release actually exists, and that its manifest checksum
 matches the entry.
 
-Building and testing plugins in CI is wired up but disabled until `jensen-plugin-sdk` is on npm. It
-turns on then.
+CI also builds and tests every plugin that has a `build` script, including the Rust backend of plugins
+that ship one, so the runner needs the `wasm32-unknown-unknown` target.

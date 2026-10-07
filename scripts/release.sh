@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Cuts a GitHub release for one plugin and prints the entry to submit to the plugin store.
 #
-#   scripts/release.sh plugins/hotspots
+#   scripts/release.sh plugins/images-tools
 #
-# Requires `jensen` on PATH and an authenticated `gh`.
+# Requires bun, the plugin's own toolchain (a Rust wasm32 target for plugins with a backend) and an authenticated `gh`.
 set -euo pipefail
 
 dir="${1:-}"
@@ -23,13 +23,11 @@ if [[ ! -f "$dir/README.md" ]]; then
   exit 1
 fi
 
-if node -e "process.exit(require('$dir/package.json').scripts?.build ? 0 : 1)"; then
-  echo "==> building $name"
-  (cd "$dir" && npm run --silent build)
-fi
+echo "==> installing and building $name"
+(cd "$dir" && bun install --silent && bun run --silent build)
 
 echo "==> publishing $name"
-jensen publish "$dir"
+(cd "$dir" && bunx jensen-plugin publish --no-build)
 
 if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
   echo "==> release $tag exists, replacing its assets"
@@ -48,4 +46,4 @@ echo "==> release is live:"
 echo "    https://github.com/$repo/releases/tag/$tag"
 echo
 echo "==> submit the printed entry to the store:"
-echo "    https://github.com/jensen-org/plugin-store  (add entries/$(node -p "require('$dir/package.json').jensen.id").json)"
+echo "    https://github.com/jensen-org/plugins-store  (add entries/$(node -p "require('$dir/package.json').jensen.id").json)"
