@@ -36,6 +36,7 @@ else
   echo "==> creating release $tag"
   gh release create "$tag" "$dir"/release/* \
     --repo "$repo" \
+    --target "$(git -C "$dir" rev-parse HEAD)" \
     --title "$name v$version" \
     --notes "See plugins/$name/README.md" \
     --latest=false
