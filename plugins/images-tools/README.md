@@ -12,7 +12,7 @@ AI agents get the same tools, so they can prepare images for you without leaving
 |---|---|
 | Resize | Set a width and a height, with the aspect ratio locked or free. |
 | Compress | JPEG at the quality you pick. PNG is recompressed without losing a pixel, and stored as a palette when it has 256 colors or fewer. SVG is minified. A file that cannot get smaller is left alone. |
-| Round corners | A radius in pixels, or Circle. The edges are smooth and transparent. A JPEG becomes a PNG, because a JPEG cannot be transparent. |
+| Round corners | A radius in pixels, or Circle. The edges are smooth and transparent. A JPEG becomes a PNG, because a JPEG cannot be transparent, and the toolbar replaces the JPEG with it. |
 | Convert | PNG, JPEG, WebP, GIF, BMP, ICO and TIFF. The original is replaced by the new file, and the open tab follows it. |
 
 Every change can be undone with Undo, or all the way back with Revert, for as long as the toolbar stays open.
@@ -31,7 +31,9 @@ drawn when an SVG is turned into a raster, because the plugin ships no fonts. AV
 
 With the plugin enabled, `list_plugin_tools` shows these tools and `call_plugin_tool` runs them:
 `dev_jensen_images_tools_info`, `_resize`, `_compress`, `_round_corners` and `_convert`. They work on project
-relative paths and only reach the image types you allowed.
+relative paths and only reach the image types you allowed. A tool never deletes a file you did not name, with
+one exception: `convert` replaces the original with the converted file, unless `keepOriginal` is true or `out`
+is given. Nothing overwrites a different existing file unless `overwrite` is true.
 
 ## What it asks for, and why
 

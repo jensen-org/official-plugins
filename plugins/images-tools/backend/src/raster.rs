@@ -127,7 +127,12 @@ fn encode_png(image: &RgbaImage) -> Result<Vec<u8>, String> {
         let data = if indexed {
             encoder.set_color(png::ColorType::Indexed);
             encoder.set_depth(png::BitDepth::Eight);
-            encoder.set_palette(palette.iter().flat_map(|c| [c[0], c[1], c[2]]).collect::<Vec<u8>>());
+            encoder.set_palette(
+                palette
+                    .iter()
+                    .flat_map(|c| [c[0], c[1], c[2]])
+                    .collect::<Vec<u8>>(),
+            );
             if palette.iter().any(|c| c[3] != 255) {
                 encoder.set_trns(palette.iter().map(|c| c[3]).collect::<Vec<u8>>());
             }
@@ -161,7 +166,12 @@ pub fn encode(image: &RgbaImage, kind: Kind, quality: u8) -> Result<Vec<u8>, Str
     match kind {
         Kind::Png => return encode_png(image),
         Kind::Jpeg => JpegEncoder::new_with_quality(&mut out, quality.clamp(1, 100))
-            .write_image(&flatten_on_white(image), width, height, ExtendedColorType::Rgb8)
+            .write_image(
+                &flatten_on_white(image),
+                width,
+                height,
+                ExtendedColorType::Rgb8,
+            )
             .map_err(fail)?,
         Kind::Webp => WebPEncoder::new_lossless(&mut out)
             .write_image(image.as_raw(), width, height, ExtendedColorType::Rgba8)

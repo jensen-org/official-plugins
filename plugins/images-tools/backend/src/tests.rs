@@ -26,7 +26,12 @@ fn at(dir: &std::path::Path, name: &str) -> String {
 
 fn gradient(width: u32, height: u32) -> RgbaImage {
     RgbaImage::from_fn(width, height, |x, y| {
-        Rgba([(x * 255 / width.max(1)) as u8, (y * 255 / height.max(1)) as u8, 128, 255])
+        Rgba([
+            (x * 255 / width.max(1)) as u8,
+            (y * 255 / height.max(1)) as u8,
+            128,
+            255,
+        ])
     })
 }
 
@@ -75,7 +80,10 @@ fn resize_by_width_keeps_the_aspect_ratio_and_rewrites_the_file_in_place() {
     let report = resize(json!({ "path": path, "width": 40 })).unwrap();
 
     assert_eq!(report["path"], json!(path));
-    assert_eq!((report["width"].clone(), report["height"].clone()), (json!(40), json!(20)));
+    assert_eq!(
+        (report["width"].clone(), report["height"].clone()),
+        (json!(40), json!(20))
+    );
     assert_eq!(size_of(&path), (40, 20));
     assert_eq!(report["before"]["width"], 100);
 }
@@ -148,7 +156,7 @@ fn a_full_radius_makes_a_circle_and_a_percent_is_of_the_shortest_side() {
 }
 
 #[test]
-fn rounding_a_jpeg_produces_a_png_because_a_jpeg_has_no_transparency() {
+fn rounding_a_jpeg_writes_a_png_next_to_it_and_keeps_the_jpeg() {
     let dir = workdir();
     let path = at(&dir, "a.jpg");
     save(&path, &flat(40, 40), Kind::Jpeg);
@@ -156,9 +164,64 @@ fn rounding_a_jpeg_produces_a_png_because_a_jpeg_has_no_transparency() {
     let report = round_corners(json!({ "path": path, "radius": 8 })).unwrap();
 
     assert_eq!(report["path"], json!(at(&dir, "a.png")));
+    assert_eq!(report["removed"], Value::Null);
+    assert!(std::path::Path::new(&path).exists());
+    assert_eq!(
+        open(&at(&dir, "a.png"), None)
+            .unwrap()
+            .image
+            .get_pixel(0, 0)
+            .0[3],
+        0
+    );
+}
+
+#[test]
+fn rounding_a_jpeg_can_replace_it_when_asked() {
+    let dir = workdir();
+    let path = at(&dir, "a.jpg");
+    save(&path, &flat(40, 40), Kind::Jpeg);
+
+    let report =
+        round_corners(json!({ "path": path, "radius": 8, "keepOriginal": false })).unwrap();
+
     assert_eq!(report["removed"], json!(path));
     assert!(!std::path::Path::new(&path).exists());
-    assert_eq!(open(&at(&dir, "a.png"), None).unwrap().image.get_pixel(0, 0).0[3], 0);
+}
+
+#[test]
+fn writing_to_an_explicit_path_never_deletes_the_source() {
+    let dir = workdir();
+    let path = at(&dir, "a.png");
+    let copy = at(&dir, "small.png");
+    save(&path, &gradient(40, 40), Kind::Png);
+
+    let resized = resize(json!({ "path": path, "width": 10, "out": copy })).unwrap();
+    assert_eq!(resized["removed"], Value::Null);
+    assert_eq!(size_of(&path), (40, 40));
+    assert_eq!(size_of(&copy), (10, 10));
+
+    let converted =
+        convert(json!({ "path": path, "to": "webp", "out": at(&dir, "b.webp") })).unwrap();
+    assert_eq!(converted["removed"], Value::Null);
+    assert!(std::path::Path::new(&path).exists());
+}
+
+#[test]
+fn compressing_into_another_path_will_not_overwrite_a_file_that_is_there() {
+    let dir = workdir();
+    let path = at(&dir, "a.jpg");
+    let target = at(&dir, "keep.jpg");
+    std::fs::write(&path, encode(&gradient(96, 96), Kind::Jpeg, 100).unwrap()).unwrap();
+    std::fs::write(&target, b"someone else's file").unwrap();
+
+    let error = compress(json!({ "path": path, "quality": 30, "out": target })).unwrap_err();
+
+    assert!(error.contains("already exists"));
+    assert_eq!(std::fs::read(&target).unwrap(), b"someone else's file");
+
+    compress(json!({ "path": path, "quality": 30, "out": target, "overwrite": true })).unwrap();
+    assert_ne!(std::fs::read(&target).unwrap(), b"someone else's file");
 }
 
 #[test]
@@ -196,7 +259,10 @@ fn compressing_a_jpeg_lowers_the_size_with_the_quality() {
     let report = compress(json!({ "path": path, "quality": 30 })).unwrap();
 
     assert!(report["bytes"].as_u64().unwrap() < before);
-    assert_eq!(std::fs::metadata(&path).unwrap().len(), report["bytes"].as_u64().unwrap());
+    assert_eq!(
+        std::fs::metadata(&path).unwrap().len(),
+        report["bytes"].as_u64().unwrap()
+    );
 }
 
 #[test]
@@ -250,14 +316,19 @@ fn every_raster_format_converts_to_every_other_and_decodes_again() {
 
     for target in ["jpeg", "webp", "gif", "bmp", "ico", "tiff", "png"] {
         let from = at(&dir, "a.png");
-        let report = convert(json!({ "path": from, "to": target, "keepOriginal": true, "overwrite": true }));
+        let report =
+            convert(json!({ "path": from, "to": target, "keepOriginal": true, "overwrite": true }));
         if target == "png" {
             assert!(report.is_err(), "converting to the same format is refused");
             continue;
         }
         let report = report.unwrap_or_else(|error| panic!("{target}: {error}"));
         let written = report["path"].as_str().unwrap().to_string();
-        assert_eq!(size_of(&written), (24, 24), "{target} decodes back to the same size");
+        assert_eq!(
+            size_of(&written),
+            (24, 24),
+            "{target} decodes back to the same size"
+        );
     }
 }
 
@@ -272,9 +343,19 @@ fn converting_keeps_transparency_where_the_target_allows_it_and_flattens_on_whit
     convert(json!({ "path": path, "to": "webp", "keepOriginal": true })).unwrap();
     convert(json!({ "path": path, "to": "jpg", "keepOriginal": true })).unwrap();
 
-    assert_eq!(open(&at(&dir, "a.webp"), None).unwrap().image.get_pixel(0, 0).0[3], 0);
+    assert_eq!(
+        open(&at(&dir, "a.webp"), None)
+            .unwrap()
+            .image
+            .get_pixel(0, 0)
+            .0[3],
+        0
+    );
     let jpeg = open(&at(&dir, "a.jpg"), None).unwrap().image;
-    assert!(jpeg.get_pixel(0, 0).0[0] > 240, "a transparent pixel becomes white in a jpeg");
+    assert!(
+        jpeg.get_pixel(0, 0).0[0] > 240,
+        "a transparent pixel becomes white in a jpeg"
+    );
 }
 
 #[test]
@@ -287,7 +368,10 @@ fn converting_never_overwrites_another_file_unless_told_to() {
     let error = convert(json!({ "path": path, "to": "jpg" })).unwrap_err();
 
     assert!(error.contains("already exists"));
-    assert_eq!(std::fs::read(at(&dir, "a.jpg")).unwrap(), b"someone else's file");
+    assert_eq!(
+        std::fs::read(at(&dir, "a.jpg")).unwrap(),
+        b"someone else's file"
+    );
     assert!(std::path::Path::new(&path).exists());
     convert(json!({ "path": path, "to": "jpg", "overwrite": true })).unwrap();
     assert!(!std::path::Path::new(&path).exists());
@@ -324,7 +408,11 @@ fn a_file_that_is_not_an_image_is_refused_clearly() {
     let path = at(&dir, "notes.png");
     std::fs::write(&path, b"plain text").unwrap();
 
-    assert!(info(json!({ "path": path })).unwrap_err().contains("could not be decoded"));
+    assert!(
+        info(json!({ "path": path }))
+            .unwrap_err()
+            .contains("could not be decoded")
+    );
     assert!(info(json!({ "path": at(&dir, "missing.png") })).is_err());
     assert!(info(json!({})).unwrap_err().contains("bad arguments"));
 }

@@ -40,6 +40,8 @@ struct CompressArgs {
     path: String,
     quality: Option<u8>,
     out: Option<String>,
+    #[serde(default)]
+    overwrite: bool,
 }
 
 #[derive(Deserialize)]
@@ -88,6 +90,7 @@ fn before(path: &str, loaded: &Loaded) -> Value {
 }
 
 struct Write<'a> {
+    replaces_original: bool,
     source_path: &'a str,
     source: &'a Loaded,
     image: &'a image::RgbaImage,
@@ -98,7 +101,17 @@ struct Write<'a> {
     overwrite: bool,
 }
 
+fn refuse_to_clobber(destination: &str, source: &str, overwrite: bool) -> Result<(), String> {
+    if destination != source && !overwrite && fs::read(destination).is_ok() {
+        return Err(format!(
+            "{destination} already exists: pick another name or allow overwriting"
+        ));
+    }
+    Ok(())
+}
+
 fn commit(request: Write) -> Result<Value, String> {
+    let explicit = request.out.is_some();
     let destination = request.out.unwrap_or_else(|| {
         if request.target == request.source.kind && !request.source.kind.is_vector() {
             request.source_path.to_string()
@@ -107,15 +120,11 @@ fn commit(request: Write) -> Result<Value, String> {
         }
     });
     let moved = destination != request.source_path;
-    if moved && !request.overwrite && fs::read(&destination).is_ok() {
-        return Err(format!(
-            "{destination} already exists: pick another name or allow overwriting"
-        ));
-    }
+    refuse_to_clobber(&destination, request.source_path, request.overwrite)?;
     fs::write(&destination, &request.bytes)?;
     let keep = request
         .keep_original
-        .unwrap_or_else(|| request.source.kind.is_vector());
+        .unwrap_or(explicit || request.source.kind.is_vector() || !request.replaces_original);
     let removed = if moved && !keep {
         fs::remove(request.source_path)?;
         Some(request.source_path.to_string())
@@ -158,9 +167,14 @@ fn resize(input: Value) -> Result<Value, String> {
     } else {
         ops::resize(&source.image, size, filter)
     };
-    let target = if source.kind.is_vector() { Kind::Png } else { source.kind };
+    let target = if source.kind.is_vector() {
+        Kind::Png
+    } else {
+        source.kind
+    };
     let bytes = encode(&image, target, DEFAULT_QUALITY)?;
     commit(Write {
+        replaces_original: false,
         source_path: &request.path,
         source: &source,
         image: &image,
@@ -183,6 +197,7 @@ fn compress(input: Value) -> Result<Value, String> {
         encode(&source.image, source.kind, quality)?
     };
     let destination = request.out.unwrap_or_else(|| request.path.clone());
+    refuse_to_clobber(&destination, &request.path, request.overwrite)?;
     let smaller = bytes.len() < raw.len();
     if !smaller && destination == request.path {
         return Ok(json!({
@@ -223,13 +238,15 @@ fn round_corners(input: Value) -> Result<Value, String> {
     };
     let mut image = source.image.clone();
     ops::round_corners(&mut image, radius);
-    let target = if source.kind.has_alpha() && source.kind != Kind::Gif && !source.kind.is_vector() {
+    let target = if source.kind.has_alpha() && source.kind != Kind::Gif && !source.kind.is_vector()
+    {
         source.kind
     } else {
         Kind::Png
     };
     let bytes = encode(&image, target, DEFAULT_QUALITY)?;
     commit(Write {
+        replaces_original: false,
         source_path: &request.path,
         source: &source,
         image: &image,
@@ -264,6 +281,7 @@ fn convert(input: Value) -> Result<Value, String> {
         request.quality.unwrap_or(DEFAULT_QUALITY),
     )?;
     commit(Write {
+        replaces_original: true,
         source_path: &request.path,
         source: &source,
         image: &source.image,

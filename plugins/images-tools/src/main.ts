@@ -156,11 +156,16 @@ export default class ImagesTools extends Plugin {
       }),
       ui.Button({
         label: "Round",
-        onClick: () => this.apply(path, "round_corners", { radius: Number(this.form.radius) || 0 }),
+        onClick: () =>
+          this.apply(path, "round_corners", {
+            radius: Number(this.form.radius) || 0,
+            ...replacing(vector),
+          }),
       }),
       ui.Button({
         label: "Circle",
-        onClick: () => this.apply(path, "round_corners", { radius: 50, percent: true }),
+        onClick: () =>
+          this.apply(path, "round_corners", { radius: 50, percent: true, ...replacing(vector) }),
       }),
     ];
 
@@ -335,6 +340,10 @@ export default class ImagesTools extends Plugin {
       { severity: failed > 0 ? "warn" : "success" },
     );
   }
+}
+
+function replacing(vector: boolean): { keepOriginal?: false } {
+  return vector ? {} : { keepOriginal: false };
 }
 
 function summary(method: string, result: Report): string {
