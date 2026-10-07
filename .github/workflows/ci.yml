@@ -44,9 +44,6 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    # Turn this on once @jensen-org/plugin-sdk 0.2.0 is on npm and the plugin-sdk repository has the v0.2.0 tag,
-    # which the images-tools backend depends on. Then delete the line below.
-    if: false
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
