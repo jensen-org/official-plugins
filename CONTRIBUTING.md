@@ -32,13 +32,16 @@ class, permissions and panes.
    screen. `fs` takes a folder (`"docs"`), a file type (`"*.png"`), or `"."` for every file, so name
    the narrowest scope that works. `network` takes exact hosts and no wildcard.
 
-4. **Build and release:**
+4. **Open a pull request against `develop`.** The maintainer reviews and approves it, then promotes
+   `develop` into `main`. Nothing ships until it is on `main`.
+
+5. **Build and release from `main`:**
 
    ```sh
    scripts/release.sh plugins/<name>
    ```
 
-5. **Submit the entry** it prints to the store repository.
+6. **Submit the entry** it prints to the store repository.
 
 ## Changing an existing plugin
 

@@ -13,6 +13,17 @@ if [[ -z "$dir" || ! -f "$dir/package.json" ]]; then
 fi
 
 dir="$(cd "$dir" && pwd)"
+root="$(git -C "$dir" rev-parse --show-toplevel)"
+
+git -C "$root" fetch --quiet origin main
+if [[ -n "$(git -C "$root" status --porcelain)" ]]; then
+  echo "error: the working tree is dirty; a release must be built from committed code" >&2
+  exit 1
+fi
+if ! git -C "$root" merge-base --is-ancestor HEAD origin/main; then
+  echo "error: HEAD is not on origin/main; promote develop into main before releasing" >&2
+  exit 1
+fi
 name="$(basename "$dir")"
 version="$(node -p "require('$dir/package.json').version")"
 tag="$(node -p "require('$dir/package.json').jensen.tag || '$version'")"
